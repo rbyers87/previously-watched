@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Previously Watched",
+  "version": "0.4.1",
+  "description": "Recaps when you resume, ad skipping, and auto-skip intros for Netflix, Disney+, Hulu and YouTube.",
+  "permissions": [
+    "storage"
+  ],
+  "icons": {
+    "16": "favicon-16x16.png",
+    "32": "favicon-32x32.png",
+    "128": "android-chrome-192x192.png",
+    "512": "android-chrome-512x512.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Previously Watched",
+    "default_icon": {
+      "16": "favicon-16x16.png",
+      "32": "favicon-32x32.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.netflix.com/*",
+        "https://www.disneyplus.com/*",
+        "https://www.hulu.com/*",
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "page-bridge.js"
+      ],
+      "matches": [
+        "https://www.netflix.com/*",
+        "https://www.disneyplus.com/*",
+        "https://www.hulu.com/*"
+      ]
+    }
+  ]
+}

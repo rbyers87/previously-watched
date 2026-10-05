@@ -1,0 +1,40 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  body { width: 320px; margin: 0; padding: 16px; font: 14px/1.4 -apple-system, system-ui, sans-serif; background: #141414; color: #eee; }
+  h1 { font-size: 16px; margin: 0 0 12px; }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #2a2a2a; }
+  .row small { display: block; color: #999; font-size: 12px; }
+  input[type=number] { width: 52px; background: #222; color: #eee; border: 1px solid #444; border-radius: 4px; padding: 3px; }
+  button { width: 100%; margin-top: 10px; padding: 8px; border: 0; border-radius: 6px; background: #e50914; color: #fff; font-weight: 600; cursor: pointer; }
+  button.alt { background: #333; }
+  details { margin-top: 12px; color: #ccc; }
+  summary { cursor: pointer; font-weight: 600; }
+  li { margin: 6px 0; }
+  #msg { margin-top: 8px; color: #8fd18f; font-size: 12px; min-height: 14px; }
+</style>
+<h1>Previously Watched</h1>
+
+<label class="row"><span>Recap on resume<small>Replays short clips of what you watched</small></span><input type="checkbox" id="recap"></label>
+<label class="row"><span>Ad skipper<small>Mutes + fast-forwards ads, clicks "Skip"</small></span><input type="checkbox" id="adskip"></label>
+<label class="row"><span>Auto-skip intros<small>Clicks Skip Intro / Recap / Credits</small></span><input type="checkbox" id="skipIntro"></label>
+<label class="row"><span>YouTube chapters<small>Recap by chapter when a video has them</small></span><input type="checkbox" id="ytChapters"></label>
+<div class="row"><span>Clip length (sec)</span><input type="number" id="clipSec" min="5" max="60"></div>
+<div class="row"><span>One clip per (min)</span><input type="number" id="blockMin" min="1" max="60"></div>
+
+<button id="replay">Replay recap now</button>
+<button id="clear" class="alt">Clear watch history</button>
+<div id="msg"></div>
+
+<details>
+  <summary>How it works</summary>
+  <ul>
+    <li><b>Recap:</b> after you've been away 10+ min, plays 15s of clips for every 15 min you watched before continuing.</li>
+    <li><b>Recap flags:</b> press <b>Alt+R</b> (Option+R on Mac) while watching to mark a key moment. Flagged moments are always included in the recap.</li>
+    <li><b>Ad skipper:</b> detects ad breaks, mutes and speeds them up, and clicks Skip when offered. It can't remove ads built into the video stream.</li>
+    <li><b>Auto-skip intros:</b> clicks Skip Intro, Skip Recap and similar buttons for you.</li>
+    <li><b>YouTube:</b> works on regular videos (not Shorts or live streams). If a video has chapters, the recap plays a short clip from each chapter you finished, keeping the same total length as the default rule. Chapters are read from the video's description timestamps. The ad skipper handles video ads and banner ads.</li>
+    <li>All data stays in your browser.</li>
+  </ul>
+</details>
+<script src="popup.js"></script>
