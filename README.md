@@ -26,7 +26,8 @@ Press **Alt+R** (**Option+R** on Mac) while watching to mark an important moment
 ### YouTube chapters
 If a YouTube video has chapters, the recap plays a short clip from the start of each chapter you finished instead of using fixed time blocks.
 
-- The total recap length follows the same "seconds per block watched" rule as the default, with a minimum of 3 seconds per chapter.
+- Each finished chapter gets a clip of your full clip length (shorter only if the chapter itself is shorter), so the recap grows with the number of chapters you've finished.
+- At least 2 finished chapters are needed; otherwise the default timed clips are used.
 - Chapters are read from the chapter list panel when available, otherwise from timestamps in the video description.
 - A video needs at least 3 timestamps, starting at 0:00, to count as having chapters.
 - Chapters you never watched are not recapped.
@@ -84,10 +85,10 @@ After reloading or updating the extension, **refresh any open video tabs**. Tabs
 Once per second, while the video is playing, the extension records the current second as "watched". It does not record time that is paused, seeking, part of an ad, or part of a recap clip. History is saved every 10 seconds and when you leave the video.
 
 ### Building the recap
-For each completed block of time (15 minutes by default), the extension finds the most recent full clip-length stretch inside that block that you fully watched, and uses it. A block you skipped through, or only partly watched, gets no clip. YouTube chapters and flags are layered on top as described above.
+For each block of time you watched (15 minutes by default, including the last partial block before your resume point), the extension finds the most recent full clip-length stretch inside that block that you fully watched, and uses it. A final partial block shorter than 2 minutes is ignored. A block you skipped through, or only partly watched, gets no clip. YouTube chapters and flags are layered on top as described above.
 
 ### Playing the recap
-For each clip, the extension seeks to the start, plays it for the clip length, and moves on to the next. When the last clip ends, it seeks back to your resume position and continues playing. Netflix uses a small page script (`page-bridge.js`) because its player doesn't allow normal seeking from extensions.
+Recap clips always play at normal (1x) speed, and your own playback speed is restored afterwards. For each clip, the extension seeks to the start, waits for the seek to land, plays it for the clip length, and moves on to the next. When the last clip ends, it seeks back to your resume position and continues playing. Netflix uses a small page script (`page-bridge.js`) because its player doesn't allow normal seeking from extensions.
 
 ### Where videos are identified
 Each video is stored under its own key:

@@ -130,16 +130,19 @@ function covered(s, len) {
 function buildClips(resumeAt, chapters = []) {
   const block = S.blockMin * 60, len = S.clipSec;
 
-  // Default: for each completed block, the latest N seconds inside it that you actually watched
+  // Default: for each block of watching (including the last partial block), the latest N seconds
+  // inside it that you actually watched
   const timed = [];
-  for (let end = block; end <= resumeAt; end += block) {
-    for (let s = end - len; s >= end - block; s--) {
+  for (let bs = 0; bs < resumeAt; bs += block) {
+    const be = Math.min(bs + block, resumeAt);
+    if (be - bs < 120) continue;              // skip a tiny tail right before the resume point
+    for (let s = be - len; s >= bs; s--) {
       if (covered(s, len)) { timed.push({ start: s, len }); break; }
     }
   }
 
-  // YouTube chapters: a short clip from the start of each finished chapter, sized so the
-  // total recap still follows the "N seconds per block watched" rule (min 3s per chapter)
+  // YouTube chapters: a clip of the full clip length from the start of each finished chapter
+  // (shorter only if the chapter itself is shorter than the clip length)
   let byChapter = [];
   if (chapters.length >= 3) {
     const done = [];
@@ -147,16 +150,15 @@ function buildClips(resumeAt, chapters = []) {
       const c = chapters[i], next = chapters[i + 1];
       if (next <= resumeAt && seen(c)) done.push({ c, room: next - c });
     }
-    const budget = (resumeAt / block) * len;
-    const each = Math.max(3, Math.min(len, Math.round(budget / (done.length || 1))));
-    byChapter = done.map(d => ({ start: d.c, len: Math.min(each, d.room) }));
+    byChapter = done.map(d => ({ start: d.c, len: Math.min(len, d.room) }));
   }
 
   // User flags (Alt+R): clip starts 3s before the flagged moment, always included
   const flagged = flags.map(f => ({ start: Math.max(0, f - 3), len }))
     .filter(c => c.start + len <= resumeAt && seen(c.start));
 
-  const base = byChapter.length ? byChapter : timed;
+  // Use chapter clips only when there are at least 2; otherwise fall back to the timed clips
+  const base = byChapter.length >= 2 ? byChapter : timed;
   const merged = [...flagged, ...base.filter(c => !flagged.some(f => Math.abs(f.start - c.start) < len))];
   return merged.sort((a, b) => a.start - b.start);
 }
@@ -221,24 +223,35 @@ async function replayNow() {
 async function runRecap(clips, resumeAt) {
   recapping = true; skipFlag = false;
   const ui = overlay();
-  for (let i = 0; i < clips.length && !skipFlag; i++) {
-    if (dead) { ui.el.remove(); recapping = false; return; }
-    const { start, len } = clips[i];
-    ui.label.textContent = `Previously watched... ${i + 1}/${clips.length}`;
-    seek(start);
+  const v = video;
+  const rate = v.playbackRate;   // recap clips always play at normal speed; restored afterwards
+  v.playbackRate = 1;
+  try {
+    for (let i = 0; i < clips.length && !skipFlag; i++) {
+      if (dead) return;
+      const { start, len } = clips[i];
+      ui.label.textContent = `Previously watched... ${i + 1}/${clips.length}`;
+      seek(start);
+      // wait for the seek to actually land (Netflix seeks go through the page bridge)
+      const t0 = Date.now();
+      while (!skipFlag && Math.abs(video.currentTime - start) > 2 && Date.now() - t0 < 5000) await sleep(100);
+      if (dead) return;
+      video.play();
+      const t1 = Date.now();
+      while (!skipFlag && video.currentTime < start + len && Date.now() - t1 < (len + 10) * 1000) await sleep(250);
+    }
+    if (dead) return;
+    seek(resumeAt);
     await sleep(800);
-    if (dead) { ui.el.remove(); recapping = false; return; }
+    if (dead) return;
     video.play();
-    const t0 = Date.now();
-    while (!skipFlag && video.currentTime < start + len && Date.now() - t0 < (len + 10) * 1000) await sleep(250);
+  } catch (e) {
+    console.warn('[PW] recap aborted', e);
+  } finally {
+    ui.el.remove();
+    recapping = false;
+    try { v.playbackRate = rate; } catch { }
   }
-  if (dead) { ui.el.remove(); recapping = false; return; }
-  seek(resumeAt);
-  await sleep(800);
-  if (dead) { ui.el.remove(); recapping = false; return; }
-  video.play();
-  ui.el.remove();
-  recapping = false;
 }
 
 // ---------- recap flags: Alt+R (Option+R on Mac) ----------
